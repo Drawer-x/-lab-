@@ -1,47 +1,48 @@
 import os
 import pandas as pd
 
-# 1. 文件夹路径
+# 1. 你的文件夹路径
 folder_path = r"C:\Users\xze97\Desktop\Programming\python\lab\第三次作业\esi_results"
 
-# 2. 匹配关键字
-keyword = "east china normal university"
+# 2. 匹配关键词
+keyword = "EAST CHINA NORMAL UNIVERSITY"
 
-# 3. 存放结果
-all_results = []
+# 3. 存放所有结果的列表
+results = []
 
-# 4. 遍历所有 Excel 文件
-for file in os.listdir(folder_path):
-    if file.endswith(".xlsx") or file.endswith(".xls"):
-        file_path = os.path.join(folder_path, file)
-        print(f"📄 正在处理：{file}")
+# 4. 遍历文件夹中的所有 Excel 文件
+for filename in os.listdir(folder_path):
+    if filename.endswith(".xlsx") or filename.endswith(".xls"):
+        file_path = os.path.join(folder_path, filename)
+        print(f"正在处理：{filename}")
 
         try:
-            excel_file = pd.ExcelFile(file_path)
-            for sheet_name in excel_file.sheet_names:
-                df = pd.read_excel(file_path, sheet_name=sheet_name)
+            # 读取第一个sheet
+            df = pd.read_excel(file_path, header=0)
 
-                # 只取第二列作为“学校名称”列
-                if df.shape[1] < 2:
-                    continue  # 如果列数不够就跳过
+            # 第二列是学校名称，匹配关键词
+            matched = df[df.iloc[:, 1].astype(str).str.strip().str.upper() == keyword]
 
-                school_col = df.columns[1]  # 第二列
-                mask = df[school_col].astype(str).str.lower().str.contains(keyword)
-                ecnu_df = df[mask]
+            if not matched.empty:
+                row = matched.iloc[0]  # 假设每个文件只有一行匹配
 
-                if not ecnu_df.empty:
-                    ecnu_df["来源文件"] = file
-                    ecnu_df["Sheet"] = sheet_name
-                    all_results.append(ecnu_df)
+                results.append({
+                    "学科": os.path.splitext(filename)[0],
+                    "排名": row.iloc[0],   # 第1列
+                    "Web of Science Documents": row.iloc[3],  # 第4列
+                    "Cites": row.iloc[4],  # 第5列
+                    "Cites/Paper": row.iloc[5],  # 第6列
+                    "Top Papers": row.iloc[6]   # 第7列
+                })
 
         except Exception as e:
-            print(f"❌ 处理 {file} 出错：{e}")
+            print(f"⚠ 处理 {filename} 出错：{e}")
 
-# 5. 合并结果 & 导出
-if all_results:
-    result_df = pd.concat(all_results, ignore_index=True)
-    save_path = os.path.join(folder_path, "#ECNU_all.xlsx")
-    result_df.to_excel(save_path, index=False)
-    print(f"\n✅ 已提取所有 East China Normal University 数据，保存到：\n{save_path}")
+# 5. 生成汇总Excel
+if results:
+    result_df = pd.DataFrame(results)
+    output_file = os.path.join(folder_path, "ECNU_学科数据汇总.xlsx")
+    result_df.to_excel(output_file, index=False)
+    print(f"\n✅ 提取完成，结果已保存至：{output_file}")
 else:
-    print("\n⚠️ 没有找到任何匹配的数据。")
+    print("\n❌ 没有在任何文件中找到 ECNU 的记录。")
