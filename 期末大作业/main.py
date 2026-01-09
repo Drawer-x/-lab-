@@ -47,21 +47,18 @@ def main():
         if not args.text:
             print("请使用 --text 参数指定待分析文本")
             return
-        
+
         print(f"分析文本: {args.text}")
+
         from models.sentiment_model import SentimentPredictor
-        
-        try:
-            predictor = SentimentPredictor(model_path=args.model_path)
-            result = predictor.predict(args.text)
-        except:
-            # 使用简单规则分析
-            from app.web_app import simple_sentiment_analysis
-            result = simple_sentiment_analysis(args.text)
-        
+
+        predictor = SentimentPredictor()
+        result = predictor.predict(args.text)
+
         print(f"\n分析结果:")
         print(f"  情感: {result['label']}")
         print(f"  置信度: {result['confidence']:.2%}")
+
     
     elif args.mode == 'visualize':
         print("生成可视化图表...")
